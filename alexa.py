@@ -1,2 +1,0 @@
-#yola
-print "Hello World"
