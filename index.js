@@ -1,15 +1,6 @@
 /* eslint-disable  func-names */
 /* eslint quote-props: ["error", "consistent"]*/
-/**
- * This sample demonstrates a simple skill built with the Amazon Alexa Skills
- * nodejs skill development kit.
- * This sample supports multiple lauguages. (en-US, en-GB, de-DE).
- * The Intent Schema, Custom Slots and Sample Utterances for this skill, as well
- * as testing instructions are located at https://github.com/alexa/skill-sample-nodejs-fact
- **/
 
-// importing our json file
-// import news from '../news.json';
 
 'use strict';
 const Alexa = require('alexa-sdk');
@@ -20,44 +11,57 @@ const Alexa = require('alexa-sdk');
 
 //Replace with your app ID (OPTIONAL).  You can find this value at the top of your skill's page on http://developer.amazon.com.
 //Make sure to enclose your value in quotes, like this: const APP_ID = 'amzn1.ask.skill.bb4045e6-b3e8-4133-b650-72923c5980f1';
-const APP_ID = undefined;
+const APP_ID = 'amzn1.ask.skill.b31ba447-3fe2-45a7-aa11-fd9b77d5008f';
 
 const SKILL_NAME = 'RJI';
-const GET_FACT_MESSAGE = "Here's your article: ";
-const HELP_MESSAGE = 'You can say tell me a space fact, or, you can say exit... What can I help you with?';
+const WELCOME_MESSAGE = 'Welcome';
+const PROMPT = 'Would you like to hear stories about technology, innovation, video or fellowships?';
+const USER_RESPONSE = ['Alexa, I want to hear stories about {userTag}',
+                       'Alexa, {userTag}',
+                       'Alexa, tell me about {userTag}'];
+const REPROMPT = 'Would you like to continue or hear more options?';
+const HELP_MESSAGE = 'You can hear stories about technology, innovation or fellowships.';
 const HELP_REPROMPT = 'What can I help you with?';
+const SORRY = 'Sorry, I cant do that yet.';
 const STOP_MESSAGE = 'Goodbye!';
 
-//=========================================================================================================================================
-//TODO: Replace this data with your own.  You can find translations of this data at http://github.com/alexa/skill-sample-node-js-fact/lambda/data
-//=========================================================================================================================================
-
 const news = require("news.json");
-
-//=========================================================================================================================================
-//Editing anything below this line might break your skill.
-//=========================================================================================================================================
 
 exports.handler = function(event, context, callback) {
     var alexa = Alexa.handler(event, context);
     alexa.appId = APP_ID;
+    // alexa.dynamoDBTableName = 'DYNAMO_DB_RESULTS_TABLE';
     alexa.registerHandlers(handlers);
     alexa.execute();
 };
 
 const handlers = {
     'LaunchRequest': function () {
-        this.emit('GetNewFactIntent');
+        // this.emit(':tell', WELCOME_MESSAGE);
+        this.emit(':ask', PROMPT);
+        this.emit('GetArticlesIntent')
+
     },
-    'GetNewFactIntent': function () {
+    'GetArticlesIntent': function (req, res) {
+        const articleArr = news;
+        const articleTags = articleArr[articleIndex].tags;
+        const splitTags = articleTags.split(",");
+        const userResponse = req.slots.userTag.value;
+
+        // const randomArticle = articleArr[articleIndex].title;
+        // const speechOutput = randomArticle;
+        //
+        this.emit(':ask', PROMPT, REPROMPT);
+        // this.response.cardRenderer(SKILL_NAME, randomArticle);
+        // this.response.speak(speechOutput);
+        // this.emit(':responseReady');
+    },
+    'SortArticlesIntent': function () {
         const articleArr = news;
         const articleIndex = Math.floor(Math.random() * articleArr.length);
-        const randomFact = articleArr[articleIndex].title;
-        const speechOutput = GET_FACT_MESSAGE + randomFact;
+        const articleTags = articleArr[articleIndex].tags;
+        const splitTags = articleTags.split(",");
 
-        this.response.cardRenderer(SKILL_NAME, randomFact);
-        this.response.speak(speechOutput);
-        this.emit(':responseReady');
     },
     'AMAZON.HelpIntent': function () {
         const speechOutput = HELP_MESSAGE;
