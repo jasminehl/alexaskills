@@ -16,13 +16,11 @@ const APP_ID = 'amzn1.ask.skill.b31ba447-3fe2-45a7-aa11-fd9b77d5008f';
 const SKILL_NAME = 'RJI';
 const WELCOME_MESSAGE = 'Welcome';
 const PROMPT = 'Would you like to hear stories about technology, innovation, video or fellowships?';
-const USER_RESPONSE = ['Alexa, I want to hear stories about {userTag}',
-                       'Alexa, {userTag}',
-                       'Alexa, tell me about {userTag}'];
 const REPROMPT = 'Would you like to continue or hear more options?';
+const ARTICLE_SEPARATOR = 'Next article: ';
 const HELP_MESSAGE = 'You can hear stories about technology, innovation or fellowships.';
 const HELP_REPROMPT = 'What can I help you with?';
-const SORRY = 'Sorry, I cant do that yet.';
+const SORRY = 'Sorry, I can\'t do that yet.';
 const STOP_MESSAGE = 'Goodbye!';
 
 const news = require("news.json");
@@ -38,30 +36,22 @@ exports.handler = function(event, context, callback) {
 const handlers = {
     'LaunchRequest': function () {
         // this.emit(':tell', WELCOME_MESSAGE);
-        this.emit(':ask', PROMPT);
+        this.emit(':ask', PROMPT, PROMPT);
         this.emit('GetArticlesIntent')
 
     },
-    'GetArticlesIntent': function (req, res) {
+    'GetArticlesIntent': function () {
         const articleArr = news;
-        const articleTags = articleArr[articleIndex].tags;
-        const splitTags = articleTags.split(",");
-        const userResponse = req.slots.userTag.value;
+        // const splitTags = articleTags.split(",");
+        const userResponse = this.event.request.intent.slots.CATEGORY.value;
+        // const sortedArticles = articleArr.sort((a, b) => a.tags > b.tags);
+        let filteredArticles = articleArr.filter(function(art){return art.tags.indexOf(userResponse) > -1}).slice(0, 4);
+        const filteredArticleTitles = filteredArticles.map(function(art){return art.title});
+        const speechOutput = filteredArticleTitles.join(ARTICLE_SEPARATOR);
 
-        // const randomArticle = articleArr[articleIndex].title;
-        // const speechOutput = randomArticle;
-        //
-        this.emit(':ask', PROMPT, REPROMPT);
         // this.response.cardRenderer(SKILL_NAME, randomArticle);
-        // this.response.speak(speechOutput);
-        // this.emit(':responseReady');
-    },
-    'SortArticlesIntent': function () {
-        const articleArr = news;
-        const articleIndex = Math.floor(Math.random() * articleArr.length);
-        const articleTags = articleArr[articleIndex].tags;
-        const splitTags = articleTags.split(",");
-
+        this.response.speak(speechOutput);
+        this.emit(':responseReady');
     },
     'AMAZON.HelpIntent': function () {
         const speechOutput = HELP_MESSAGE;
@@ -79,3 +69,6 @@ const handlers = {
         this.emit(':responseReady');
     },
 };
+
+// function checkTags(tags, ) {
+// }
