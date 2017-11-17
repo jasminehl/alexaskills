@@ -1,0 +1,36 @@
+{
+  "interactionModel": {
+    "languageModel": {
+      "invocationName": "RJI",
+      "intents": [
+        {
+          "name": "AMAZON.CancelIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.HelpIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.StopIntent",
+          "samples": []
+        },
+        {
+          "name": "GetArticlesIntent",
+          "samples": [
+            "tell me stories about {CATEGORY} ",
+            "tell me about {CATEGORY}",
+            "{CATEGORY}",
+            "give me articles about {CATEGORY}"
+          ],
+          "slots": [
+            {
+              "name": "CATEGORY",
+              "type": "RJI_CATEGORY"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
