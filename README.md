@@ -1,2 +1,1 @@
-This is a project by Heng and Lauren
-Hi Heng, wassup
+This is an Alexa Skill written in Node.js by Heng Li, Carlie Procell and Lauren Wrigley for the Reynolds Journalism Institute that will give users the most recent articles related to a topic of their choice. It scrapes the articles from [RJI's RSS feed](https://www.rjionline.org/rss) and you can find out more on how the data is scraped and stored [here](https://github.com/qbscarlie/rji_scraper). 
