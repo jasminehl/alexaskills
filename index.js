@@ -1,74 +1,133 @@
-/* eslint-disable  func-names */
-/* eslint quote-props: ["error", "consistent"]*/
-
-
 'use strict';
-const Alexa = require('alexa-sdk');
+module.change_code = 1;
+var _ = require('lodash');
+var Alexa = require('alexa-app');
 
-//=========================================================================================================================================
-//TODO: The items below this comment need your attention.
-//=========================================================================================================================================
+// var app = chatskills.app('journalism_capstone');
+var app = new Alexa.app('journalism_capstone');
 
-//Replace with your app ID (OPTIONAL).  You can find this value at the top of your skill's page on http://developer.amazon.com.
-//Make sure to enclose your value in quotes, like this: const APP_ID = 'amzn1.ask.skill.bb4045e6-b3e8-4133-b650-72923c5980f1';
-const APP_ID = 'amzn1.ask.skill.b31ba447-3fe2-45a7-aa11-fd9b77d5008f';
+const util = require('util')
+
+// http://localhost:8080/alexa/journalism_capstone
 
 const SKILL_NAME = 'RJI';
 const WELCOME_MESSAGE = 'Welcome';
-const PROMPT = 'Would you like to hear stories about technology, innovation, video or fellowships?';
-const REPROMPT = 'Would you like to continue or hear more options?';
-const ARTICLE_SEPARATOR = 'Next article: ';
-const HELP_MESSAGE = 'You can hear stories about technology, innovation or fellowships.';
+const PROMPT = 'Would you like to hear stories about technology, innovation, videos, or RJI fellowships?';
+const REPROMPT = 'Would you like to continue or hear more?';
+const ARTICLE_SEPARATOR = '. The next article\'s headline is ';
+const HELP_MESSAGE = 'You can hear stories about technology, innovation, videos, or RJI fellowships.';
 const HELP_REPROMPT = 'What can I help you with?';
 const SORRY = 'Sorry, I can\'t do that yet.';
 const STOP_MESSAGE = 'Goodbye!';
 
-const news = require("news.json");
+const news = require("./news.json");
 
-exports.handler = function(event, context, callback) {
-    var alexa = Alexa.handler(event, context);
-    alexa.appId = APP_ID;
-    // alexa.dynamoDBTableName = 'DYNAMO_DB_RESULTS_TABLE';
-    alexa.registerHandlers(handlers);
-    alexa.execute();
-};
+app.launch(function(req, res) {
+	res.say(PROMPT).reprompt(PROMPT).shouldEndSession(false);
+});
 
-const handlers = {
-    'LaunchRequest': function () {
-        // this.emit(':tell', WELCOME_MESSAGE);
-        this.emit(':ask', PROMPT, PROMPT);
-        this.emit('GetArticlesIntent')
+app.intent('ContinueIntent', {
+    'utterances': ['continue']
+}, function(req, res) {
+	res.say(PROMPT).reprompt(PROMPT).shouldEndSession(false);
+});
 
-    },
-    'GetArticlesIntent': function () {
-        const articleArr = news;
-        // const splitTags = articleTags.split(",");
-        const userResponse = this.event.request.intent.slots.CATEGORY.value;
-        // const sortedArticles = articleArr.sort((a, b) => a.tags > b.tags);
-        let filteredArticles = articleArr.filter(function(art){return art.tags.indexOf(userResponse) > -1}).slice(0, 4);
-        const filteredArticleTitles = filteredArticles.map(function(art){return art.title});
-        const speechOutput = filteredArticleTitles.join(ARTICLE_SEPARATOR);
+app.intent('ArticlesIntent', {
+  'slots': { 'TAG': 'LITERAL' },
+  'utterances': ['tell me {|stories} about {technology|innovation|videos|fellowships|TAG}', '{technology|innovation|videos|fellowships|TAG}', '{give me|read} articles {about|on} {technology|innovation|videos|fellowships|TAG}', 'continue']
+}, function(req, res) {
+	function jsUcfirst(string) {
+	    return string.charAt(0).toUpperCase() + string.slice(1);
+	}
 
-        // this.response.cardRenderer(SKILL_NAME, randomArticle);
-        this.response.speak(speechOutput);
-        this.emit(':responseReady');
-    },
-    'AMAZON.HelpIntent': function () {
-        const speechOutput = HELP_MESSAGE;
-        const reprompt = HELP_REPROMPT;
+	var currentTag = req.slot('TAG')
+	if (!currentTag) {
+		res.say(HELP_MESSAGE).reprompt(HELP_REPROMPT).shouldEndSession(false);
+		return true
+	} else {
+		var slice = 0
+		const articleArr = news;
+		let filteredArticles = articleArr.filter(function(art){return art.tags.indexOf(jsUcfirst(currentTag)) > -1}).slice(0, 4);
+		const filteredArticleTitles = filteredArticles.map(function(art){return art.title});
+		const speechOutput = filteredArticleTitles.join(ARTICLE_SEPARATOR) + REPROMPT;
 
-        this.response.speak(speechOutput).listen(reprompt);
-        this.emit(':responseReady');
-    },
-    'AMAZON.CancelIntent': function () {
-        this.response.speak(STOP_MESSAGE);
-        this.emit(':responseReady');
-    },
-    'AMAZON.StopIntent': function () {
-        this.response.speak(STOP_MESSAGE);
-        this.emit(':responseReady');
-    },
-};
+		res.session('tag', currentTag)
+		res.session('slice', slice)
 
-// function checkTags(tags, ) {
-// }
+		res.say(speechOutput).reprompt(REPROMPT).shouldEndSession(false);
+		return true
+	}
+});
+
+app.intent('ReadMoreIntent', {
+	'utterances': ['Read More', 'hear more options']
+}, function(req, res) {
+	function jsUcfirst(string) {
+	    return string.charAt(0).toUpperCase() + string.slice(1);
+	}
+
+	var currentTag = req.session('tag')
+	var slice = req.session('slice') || 0
+	if (!currentTag) {
+		res.say(HELP_MESSAGE).reprompt(HELP_REPROMPT).shouldEndSession(false);
+		return true
+	} else {
+		slice += 1
+		const articleArr = news;
+		let filteredArticles = articleArr.filter(function(art){return art.tags.indexOf(jsUcfirst(currentTag)) > -1})
+		console.log(util.inspect(filteredArticles, false, null))
+		let slicedArticles = filteredArticles.slice(slice * 5, (slice * 5) + 5);
+
+		if(slicedArticles && slicedArticles.length > 0) {
+			const slicedArticleTitles = slicedArticles.map(function(art){return art.title});
+			const speechOutput = slicedArticleTitles.join(ARTICLE_SEPARATOR) + ". " + REPROMPT;
+
+			res.session('tag', currentTag)
+			res.session('slice', slice)
+
+			res.say(speechOutput).reprompt(REPROMPT).shouldEndSession(false);
+		} else {
+			res.clear('tag')
+			res.clear('slice')
+			res.say("There are no more articles. " + PROMPT).reprompt(REPROMPT).shouldEndSession(false);
+		}
+
+		return true
+	}
+});
+
+app.intent('ReadArticleIntent', {
+	'slots': { 'TITLE': 'LITERAL' },
+	'utterances': ['Read {TITLE}']
+}, function(req, res) {
+	let currentTitle = req.slot('TITLE')
+	if (!currentTitle) {
+		res.say(HELP_MESSAGE).reprompt(HELP_REPROMPT).shouldEndSession(false);
+		return true
+	} else {
+		const articleArr = news;
+		let filteredArticle = articleArr.filter(function(art){ return art.title.toLowerCase().trim() === currentTitle.toLowerCase().trim() });
+
+		if(filteredArticle && filteredArticle.length >= 1) {
+			const speechOutput = filteredArticle[0].title + ". The content of the article is " + filteredArticle[0].summary
+			res.say(speechOutput).shouldEndSession(true);
+			return true
+		} else {
+			res.say(HELP_MESSAGE).reprompt(HELP_REPROMPT).shouldEndSession(false);
+			return true
+		}
+	}
+});
+
+app.intent('AMAZON.HelpIntent', function(req, res) {
+	res.say(HELP_MESSAGE).reprompt(HELP_REPROMPT).shouldEndSession(false);
+});
+app.intent('AMAZON.CancelIntent', function(req, res) {
+	res.say(STOP_MESSAGE).shouldEndSession(false);
+});
+app.intent('AMAZON.StopIntent', function(req, res) {
+	res.say(STOP_MESSAGE).shouldEndSession(false);
+});
+
+
+module.exports = app;
